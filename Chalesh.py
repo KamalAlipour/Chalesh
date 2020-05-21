@@ -11,14 +11,7 @@ from telegram import ReplyKeyboardMarkup,InlineKeyboardButton , InlineKeyboardMa
 import dotenv
 import sys
 
-#try:
 from kivy.app import App
-#except ImportError:
-#    import pip._internal as pip
-#    pip.main(['install', 'kivy'])
-
-
-
 
 from kivy.uix.label import Label
 from kivy.uix.button import Button
@@ -201,50 +194,29 @@ class Chalesh():
         try:
             challenge.infotxt.foreground_color = (0, 1, 0, 1)
             challenge.infotxt.text += "Count of " + type + ": " + str(countOfType) + '\n'
-            #print("Count: ", countOfType)
             delNumber = countOfType - maxMessages
             if min(mindel,delNumber)>0:
                 removeIdsArray = collection.find({"chat_id":self.chaleshID}, {"_id": 1}).sort([("date", 1)]).limit(min(mindel,delNumber))   #.map(function(doc) {return doc._id;}); # Pull out just the _ids
         except Exception as e:
-            #print ("Error limit 1000: ", e)
             pass
-
-
-        ########################################
-        # #print(message)
         return removeIdsArray
 
     def registerID(self,bot,update):
-        #print(update.message.from_user)
         removeIdsArray = {}
         removeIdsArray = self.registerIt(update.message.message_id,
                       update.message.chat_id,
                       update.message.from_user['id'],
                       info=update.message.from_user)
-
-        ################################ Cleaning  ################
         return
 
 
     def removeMessageLeft(self,bot,update):
-        #print ("Start removeMessageLeft")
+        #Start Remove Message Left
         bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
-        #print(update.message.message_id , " removed")
         return
 
     def callback_func(self, bot, update):
-        # print("-"*40)
-        # print("new_chat_members","\nupdate._effective_message",update._effective_message,"\nupdate.update_id",update.update_id,
-        #       "\nupdate.message.message_id", update.message.message_id,"\nupdate.message.text",update.message.text)
-        # # here you receive a list of new members (User Objects) in a single service message
-        # new_members = update.message.new_chat_membersp
-        #print("Effective message:",update._effective_message)
-        #print ("Start callback_func Joinning Message")
         bot.delete_message(chat_id=update._effective_message.chat_id, message_id=update._effective_message.message_id)
-        #print(update._effective_message.message_id, " removed")
-        # do your stuff here:
-        # for member in new_members:
-        #     print(member.username)
         return
 
 
@@ -254,33 +226,7 @@ class Chalesh():
         return
 
     def setPeriod(self,bot,update):
-        # bot.send_message("پیامهای مربوط به چند روز قبل حذف شوند؟",chat_id = update.message.chat_id , reply_markup=self.key)
-        # self.operation="setPeriod"
-        return
-
-    # def buttonsDriven(self,bot,update):
-    #     button = update.callback_query
-    #     if button=='time':
-    #         # if self.operation=="setTime":
-    #         bot.send_message("زمان شروع را وارد کنید",chat_id=update.message.chat_id, reply_markup=self.inlineSaveTimeKey)
-    #     if button=='save time':
-    #         startText=update.message.text
-    #         defaultTime=datetime.datetime.strptime("16:30","%h:%m")
-    #         try:
-    #             self.startTime=datetime.datetime.strftime(startText,"%h:%m")
-    #         except:
-    #             self.startTime=defaultTime
-    #             #print("زمان شروع پاکسازی صحیح نمیباشد برای مثال طبق قالب ? ده دقیقه بعد از نیمه شب وارد کنید", self.startTime)
-    #         #self.clean["start"]=self.startTime
-    #     if button=='duration':
-    #         bot.send_message("زمان شروع را وارد کنید", chat_id=update.message.chat_id,
-    #                          reply_markup=self.inLineSaveDurationKey)
-    #     #if button=='save duration':
-    #         #if button == 'save time':
-    #         # if self.operation == "setPeriod":
-    #
-    #                 #print("عددد وارد شده معتبر نمیباشد لطفأ دومرتبه سعی کنید")
-    #     return
+        pass
 
     def registerVideo(self,bot,update):
         type="Video"
@@ -301,18 +247,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    #print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id":self.chaleshID,"_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
-                    #print("Removed: ", id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print (e)
 
         return
 
@@ -335,21 +277,15 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    #print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
-
                     collection.delete_one({"chat_id":self.chaleshID,"_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
-                    #challenge.infotxt.foreground_color=(1,0,0,1)
-                    # challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                     challenge.infotxt.foreground_color = (1, 0, 0, 1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) + '\n'
 
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print (e)
 
         return
 
@@ -372,17 +308,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerAnimation(self,bot,update):
@@ -404,17 +337,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    #print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id":self.chaleshID,"_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print (e)
 
         return
 
@@ -437,17 +367,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerContact(self, bot,update):
@@ -469,17 +396,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
 
         return
 
@@ -501,17 +425,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerForwarded(self,bot,update):
@@ -532,17 +453,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerGame(self,bot,update):
@@ -569,11 +487,9 @@ class Chalesh():
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerGroup(self,bot,update):
@@ -594,16 +510,13 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     print("Removed: ", self.chaleshID)
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerInvoice(self,bot,update):
@@ -624,17 +537,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerLocation(self,bot,update):
@@ -655,17 +565,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerPassport_data(self,bot,update):
@@ -686,17 +593,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
         return
 
     def registerPhoto(self,bot,update):
@@ -717,17 +621,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
 
         return
 
@@ -755,11 +656,9 @@ class Chalesh():
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
 
         return
 
@@ -783,18 +682,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
-
         return
 
     def registerVenue(self,bot,update):
@@ -815,17 +710,14 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
 
         return
 
@@ -847,13 +739,11 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
@@ -879,25 +769,20 @@ class Chalesh():
         try:
             for id in removeIdsArray:
                 try:
-                    # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
                     bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
                     challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
                 except Exception as e:
-                    #print(e)
                     continue
         except Exception as e:
             pass
-            #print(e)
 
         return
 
     def chaleshBot(self):
         self.updater=Updater("349821902:AAFDHs18HQLUzDNWSvpun8kolbQuvZAoQlE")
         self.updater.dispatcher.add_handler(CommandHandler("start", self.start))
-        #updater.dispatcher.add_handler(CommandHandler("time", self.setTime))
-        #updater.dispatcher.add_handler(CommandHandler("period", self.setPeriod))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.status_update.left_chat_member,self.removeMessageLeft))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, self.callback_func))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.video,self.registerVideo))
@@ -912,8 +797,6 @@ class Chalesh():
         self.updater.dispatcher.add_handler(MessageHandler(Filters.invoice,self.registerInvoice))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.location,self.registerLocation))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.passport_data,self.registerPassport_data))
-        #Video,Text,Animation,Command,Contact,Document,Forwarded,Game,Group,Invoice,Location,Passport_data
-        #Photo,Private,Replay,Sticker,Venue,Video_Note,Voice
         self.updater.dispatcher.add_handler(MessageHandler(Filters.photo,self.registerPhoto))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.private,self.registerPrivate))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.reply,self.registerReplay))
@@ -922,23 +805,17 @@ class Chalesh():
         self.updater.dispatcher.add_handler(MessageHandler(Filters.video_note,self.registerVideo_Note))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.voice,self.registerVoice))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.all,self.registerID))
-        #updater.dispatcher.add_handler(CallbackQueryHandler(self.buttonsDriven))
-        #updater.dispatcher.add_handler(MessageHandler(Filters.status_update,self.test_filters_status_update))
         self.updater.start_polling()
 
         return
 
 
 if __name__=="__main__":
-    #print(sys.version)
-    #kivy.require('1.11.1')
     dotenv.load_dotenv()
     user = os.getenv('user')
     password = os.getenv('password')
-    # cleaning.update_many( { "_id" : self.chaleshID }, { "$pull" : { "settings" }})
     cluster = MongoClient(
         f"mongodb+srv://{user}:{password}@cluster0-j47c5.gcp.mongodb.net/test?retryWrites=true&w=majority")
-    # print(cluster)
     db = cluster["Chalesh"]
     collection = db["Messages"]
     cleaning = db["Cleaning"]
