@@ -7,7 +7,6 @@ import bidi.algorithm
 import arabic_reshaper
 
 from pymongo import MongoClient
-from telegram import ReplyKeyboardMarkup,InlineKeyboardButton , InlineKeyboardMarkup
 import dotenv
 import sys
 
@@ -54,7 +53,7 @@ class ChaleshApp(App):
             btn.bind(on_release=lambda btn: dropdown.select(btn.text))
             dropdown.add_widget(btn)
 
-        self.mainbutton = Button(text='Run', size_hint=(.2, .1))
+        self.mainbutton = Button(text='Deletion Types', size_hint=(.2, .1))
         self.mainbutton.pos_hint = {'x': 0.4, 'top': .9}
         self.mainbutton.bind(on_release=dropdown.open)
         dropdown.bind(on_select=lambda instance, x: setattr(self.mainbutton, 'text', x))
@@ -123,7 +122,7 @@ class ChaleshApp(App):
 
 class Chalesh():
     def __init__(self):
-        self.percentDeleteOnStep = 0.01
+        self.percentDeleteOnStep = 0.1
         self.chaleshID = chaleshID
         return
 
@@ -136,29 +135,19 @@ class Chalesh():
         self.updater.idle()
         return
 
-    def start(self,bot,update):
-        bot.send_message(text="سلام آماده ام" , chat_id=update.message.chat_id, reply_markup=self.inlineKey)
+    def start(self,update,context):
+        context.bot.send_message(text="سلام آماده ام" , chat_id=update.message.chat_id) #, reply_markup=self.inlineKey)
         return
 
     def queryByDuration(self,type):
         deleteCandidates={}
         period=cleaning.find({"_id": self.chaleshID },{"settings."+type+".number"})[0]['settings'][type]['number']
-        completedDate = cleaning.find({"_id":self.chaleshID},{"completed"})[0]["completed"]
-        startTime = cleaning.find({"_id":self.chaleshID},{"start"})[0]["start"].time()
 
         try:
             critical_date=datetime.datetime.today()-datetime.timedelta(days=period)
-            if completedDate < datetime.datetime.today() and datetime.datetime.now().time() > startTime:
-                deleteCandidates=collection.find({"chat_id": self.chaleshID,"date": { "$lte": critical_date }})
-                completedDate=datetime.datetime.today()
-                try:
-                    #print("")
-                    cleaning.update_one({"_id": self.chaleshID}, { "$set": { "completed": datetime.datetime.today() } })
-                except Exception as exp:
-                    #print("Error:", exp)
-                    pass
+            deleteCandidates=collection.find({"chat_id": self.chaleshID, "type": type, "date": { "$lte": critical_date }})
+
         except Exception as exp:
-            #print("Error Cleaning",exp)
             pass
         return deleteCandidates
 
@@ -196,12 +185,12 @@ class Chalesh():
             challenge.infotxt.text += "Count of " + type + ": " + str(countOfType) + '\n'
             delNumber = countOfType - maxMessages
             if min(mindel,delNumber)>0:
-                removeIdsArray = collection.find({"chat_id":self.chaleshID}, {"_id": 1}).sort([("date", 1)]).limit(min(mindel,delNumber))   #.map(function(doc) {return doc._id;}); # Pull out just the _ids
+                removeIdsArray = collection.find({"chat_id":self.chaleshID,"type": type}, {"_id": 1}).sort([("date", 1)]).limit(min(mindel,delNumber))   #.map(function(doc) {return doc._id;}); # Pull out just the _ids
         except Exception as e:
             pass
         return removeIdsArray
 
-    def registerID(self,bot,update):
+    def registerID(self,update,context):
         removeIdsArray = {}
         removeIdsArray = self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -210,25 +199,25 @@ class Chalesh():
         return
 
 
-    def removeMessageLeft(self,bot,update):
+    def removeMessageLeft(self,update,context):
         #Start Remove Message Left
-        bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
+        context.bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
         return
 
-    def callback_func(self, bot, update):
-        bot.delete_message(chat_id=update._effective_message.chat_id, message_id=update._effective_message.message_id)
+    def callback_func(self, update, context):
+        context.bot.delete_message(chat_id=update._effective_message.chat_id, message_id=update._effective_message.message_id)
         return
 
 
-    def setTime(self,bot,update):
-        bot.send_message("زمان شروع عملیات پاکسازی را مطابق با قالب ساعت : دقیقه وارد کنید", chat_id=update.message.chat_id, reply_markup=self.key)
+    def setTime(self,update,context):
+        context.bot.send_message("زمان شروع عملیات پاکسازی را مطابق با قالب ساعت : دقیقه وارد کنید", chat_id=update.message.chat_id)#, reply_markup=self.key)
         self.operation="setTime"
         return
 
-    def setPeriod(self,bot,update):
+    def setPeriod(self,update,context):
         pass
 
-    def registerVideo(self,bot,update):
+    def registerVideo(self,update,context):
         type="Video"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -248,17 +237,18 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id":self.chaleshID,"_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: ", str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
 
         return
 
-    def registerText(self,bot,update):
+    def registerText(self,update,context):
         type = "Text"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -278,18 +268,19 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id":self.chaleshID,"_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color = (1, 0, 0, 1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) + '\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
 
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
 
         return
 
-    def registerReplay(self,bot,update):
+    def registerReplay(self,update,context):
         type="Replay"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -309,16 +300,17 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
         return
 
-    def registerAnimation(self,bot,update):
+    def registerAnimation(self,update,context):
         type="Animation"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -338,17 +330,18 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id":self.chaleshID,"_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
 
         return
 
-    def registerCommand(self,bot,update):
+    def registerCommand(self,update,context):
         type="Command"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -368,16 +361,17 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
         return
 
-    def registerContact(self, bot,update):
+    def registerContact(self, update,context):
         type="Contact"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -397,17 +391,18 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"][0]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
 
         return
 
-    def registerDocument(self,bot,update):
+    def registerDocument(self,update,context):
         type = "Document"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -426,16 +421,17 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
         return
 
-    def registerForwarded(self,bot,update):
+    def registerForwarded(self,update,context):
         type="Forwarded"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -454,16 +450,17 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
         return
 
-    def registerGame(self,bot,update):
+    def registerGame(self,update,context):
         type="Game"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -483,16 +480,17 @@ class Chalesh():
                 try:
                     # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
         return
 
-    def registerGroup(self,bot,update):
+    def registerGroup(self,update,context):
         type="Group"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -511,15 +509,15 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
-                    print("Removed: ", self.chaleshID)
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    #print("Removed: ", self.chaleshID)
                 except Exception as e:
                     continue
         except Exception as e:
             pass
         return
 
-    def registerInvoice(self,bot,update):
+    def registerInvoice(self,update,context):
         type="Invoice"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -538,16 +536,17 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
         return
 
-    def registerLocation(self,bot,update):
+    def registerLocation(self,update,context):
         type="Location"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -566,16 +565,17 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
         return
 
-    def registerPassport_data(self,bot,update):
+    def registerPassport_data(self,update,context):
         type="Passport"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -594,16 +594,17 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
         return
 
-    def registerPhoto(self,bot,update):
+    def registerPhoto(self,update,context):
         type="Photo"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -622,17 +623,18 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
 
         return
 
-    def registerPrivate(self,bot,update):
+    def registerPrivate(self,update,context):
         type="Private"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -652,10 +654,12 @@ class Chalesh():
                 try:
                     # print("ready to delete: chat_id={}, message_id={}".format(self.chaleshID,id["_id"]))
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
+
                     continue
         except Exception as e:
             pass
@@ -664,7 +668,7 @@ class Chalesh():
 
 
 
-    def registerSticker(self,bot,update):
+    def registerSticker(self,update,context):
         type="Sticker"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -683,16 +687,18 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
+
                     continue
         except Exception as e:
             pass
         return
 
-    def registerVenue(self,bot,update):
+    def registerVenue(self,update,context):
         type = "Venue"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -711,17 +717,18 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
 
         return
 
-    def registerVideo_Note(self,bot,update):
+    def registerVideo_Note(self,update,context):
         type = "Video_Note"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -740,10 +747,11 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
@@ -751,7 +759,7 @@ class Chalesh():
 
         return
 
-    def registerVoice(self,bot,update):
+    def registerVoice(self,update,context):
         type="Voice"
         self.registerIt(update.message.message_id,
                       update.message.chat_id,
@@ -770,18 +778,28 @@ class Chalesh():
             for id in removeIdsArray:
                 try:
                     collection.delete_one({"chat_id": self.chaleshID, "_id": id["_id"]})
-                    bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
+                    context.bot.delete_message(chat_id=self.chaleshID, message_id=id["_id"])
                     challenge.infotxt.foreground_color=(1,0,0,1)
-                    challenge.infotxt.text += "Removed: ", str(id["_id"]) +'\n'
+                    challenge.infotxt.text += "Removed: " + str(id["_id"]) + '\n' #+ str(id["date"]) + '\n'
                 except Exception as e:
+                    #challenge.infotxt.text = str(e)
                     continue
         except Exception as e:
             pass
 
         return
 
+    def newChatPhoto(self,update,context):
+        try:
+            challenge.infotxt.text += "The new Chat Photo ran by:" + update.message.from_user + "\n"
+            self.registerPhoto()
+            #context.bot.delete_message(chat_id=self.chaleshID, message_id=update.message.message_id)
+        except Exception as e:
+            challenge.infotxt.text +=str(e)
+        return
+
     def chaleshBot(self):
-        self.updater=Updater("349821902:AAFDHs18HQLUzDNWSvpun8kolbQuvZAoQlE")
+        self.updater=Updater("349821902:AAFDHs18HQLUzDNWSvpun8kolbQuvZAoQlE",use_context=True)
         self.updater.dispatcher.add_handler(CommandHandler("start", self.start))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.status_update.left_chat_member,self.removeMessageLeft))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, self.callback_func))
@@ -797,16 +815,20 @@ class Chalesh():
         self.updater.dispatcher.add_handler(MessageHandler(Filters.invoice,self.registerInvoice))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.location,self.registerLocation))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.passport_data,self.registerPassport_data))
-        self.updater.dispatcher.add_handler(MessageHandler(Filters.photo,self.registerPhoto))
+        self.updater.dispatcher.add_handler(MessageHandler(Filters.photo,self.registerPhoto,edited_updates=False))
+        self.updater.dispatcher.add_handler(MessageHandler(Filters.photo,self.newChatPhoto,edited_updates=True))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.private,self.registerPrivate))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.reply,self.registerReplay))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.sticker,self.registerSticker))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.venue,self.registerVenue))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.video_note,self.registerVideo_Note))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.voice,self.registerVoice))
+        self.updater.dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_photo,self.newChatPhoto))
+        self.updater.dispatcher.add_handler(MessageHandler(Filters.status_update.chat_created,self.newChatPhoto))
+        self.updater.dispatcher.add_handler(MessageHandler(Filters.status_update.delete_chat_photo,self.newChatPhoto))
+
         self.updater.dispatcher.add_handler(MessageHandler(Filters.all,self.registerID))
         self.updater.start_polling()
-
         return
 
 
